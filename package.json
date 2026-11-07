@@ -1,0 +1,22 @@
+{
+  "name": "juris-tests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "More test coverage for juris and juris-kit, taken from the sibling checkouts as a consumer takes them",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "juris": "file:../juris",
+    "juris-kit": "file:../juris-kit"
+  },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "test:juris": "node --test \"tests/juris/*.test.mjs\"",
+    "test:kit": "node --test \"tests/juris-kit/*.test.mjs\"",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include=\"../juris/*.js\" --test-coverage-include=\"../juris-kit/server/**/*.js\" \"tests/**/*.test.mjs\"",
+    "coverage:juris": "node --test --experimental-test-coverage --test-coverage-include=\"../juris/*.js\" \"tests/juris/*.test.mjs\"",
+    "coverage:kit": "node --test --experimental-test-coverage --test-coverage-include=\"../juris-kit/server/**/*.js\" \"tests/juris-kit/*.test.mjs\""
+  }
+}
