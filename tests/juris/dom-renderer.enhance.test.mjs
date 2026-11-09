@@ -210,6 +210,42 @@ test("enhance refuses an element inside a Juris-rendered subtree, unless forced"
     assert.equal(target.getAttribute("title"), "host", "the element Juris drew into is not inside what it drew");
 });
 
+test("enhance refuses what Juris drew at any depth, and rows a binding draws into markup Juris did not draw", () => {
+    const juris = client({ state: { items: ["a", "b"] } });
+    const target = put(el("div"));
+    const table = juris.render(target, {
+        table: { children: [{ tbody: { children: [{ tr: { children: [{ td: { children: [{ b: "deep" }] } }] } }] } }] },
+    });
+    const deep = table.firstChild.firstChild.firstChild.firstChild;
+    assert.equal(deep.localName, "b");
+    assert.throws(() => juris.enhance(deep, { title: "x" }), { message: /inside a Juris-rendered subtree/ });
+
+    // A list the server wrote, its rows drawn by a binding: the list is not Juris's, every row is.
+    const list = put(el("ul"));
+    const rows = () => juris.getState("items").map((item) => ({ li: { key: item, children: [{ i: item }] } }));
+    juris.enhance(list, { children: rows });
+    juris.setValue("items", ["a", "b", "c"]);
+    const [first, , added] = list.childNodes;
+    assert.throws(() => juris.enhance(first, { title: "x" }), { message: /inside a Juris-rendered subtree/ });
+    const inside = { message: /inside a Juris-rendered subtree/ };
+    assert.throws(() => juris.enhance(added.firstChild, { title: "x" }), inside);
+
+    // A write made while Juris draws an element's children wakes that list's binding there and then:
+    // the row it draws into the page's list is Juris's all the same.
+    juris.registerComponent("Adds", () => {
+        juris.setValue("items", ["a", "b", "c", "d"]);
+        return { em: "added" };
+    });
+    juris.render(target, { section: { children: [{ p: { children: [{ Adds: {} }] } }] } });
+    const fourth = list.childNodes[3];
+    assert.equal(fourth.textContent, "d");
+    assert.throws(() => juris.enhance(fourth, { title: "x" }), { message: /inside a Juris-rendered subtree/ });
+
+    // Last, as enhancing the list again takes the place of what enhanced it before.
+    juris.enhance(list, { title: "host" });
+    assert.equal(list.getAttribute("title"), "host", "the list itself is still the page's");
+});
+
 test("enhance refuses an element of a refused tag, unless allowTags names it", () => {
     const frame = put(el("iframe"));
     assert.throws(() => client().enhance(frame, { src: "https://elsewhere.test/" }), {
